@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import json
 import logging
 from pathlib import Path
+import sys
 import time
 
 from helpers import get_and_validate_env
@@ -18,22 +19,20 @@ YOURLS_KEY = get_and_validate_env("YOURLS_KEY")
 
 
 def setup_logging():
-    myapp_logger = logging.getLogger("yourls_in_repo")
-    myapp_logger.setLevel(logging.INFO)
+    # Configure root logger (applies to all modules)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
 
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
     handler.setLevel(logging.INFO)
 
-    myapp_logger.addHandler(handler)
-    myapp_logger.propagate = False  # Prevent logs from bubbling to root logger
+    if not root_logger.handlers:
+        root_logger.addHandler(handler)
 
-    # Suppress or reduce verbosity from third-party libraries
+    # Reduce spamming from other libraries
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
-
-    # Raise root logger's level to suppress generic noise
-    logging.getLogger().setLevel(logging.WARNING)
 
 
 def read_json_file_list(
@@ -49,15 +48,17 @@ def read_json_file_list(
     filepath = Path(filepath) 
     project_dir = filepath.parent
 
+    filepaths = []
+
     try:
         json_data = json.loads(filepath.read_text(encoding='utf-8'))
     except Exception as e:
         raise Exception(f"Failed to read or parse JSON file: {e}")
 
-    filepaths = [
-        project_dir / Path(p) for p in json_data.get("files", [])
-          if Path(p).exists() and Path(p).is_file() and Path(p).suffix.lower() in permitted_filetypes
-        ]
+    for rel_path in json_data.get("files", []):
+        abs_path = (project_dir / rel_path).resolve()
+        if abs_path.exists() and abs_path.is_file() and abs_path.suffix.lower() in permitted_filetypes:
+            filepaths.append(abs_path)
 
     if not filepaths:
         raise ValueError("No files found in the JSON `file` list.")
@@ -78,7 +79,10 @@ def resolve_input_paths(
     """
     resolved_files = []
 
-    json_filepath = [i for i in inputs if i.is_file() and i.suffix.lower() == '.json'][0] or ''
+    json_filepath = next(
+        (Path(i) for i in inputs if Path(i).is_file() and Path(i).suffix.lower() == '.json'),
+        ''
+    )
 
     # handle JSON input
     if json_filepath:
@@ -133,16 +137,16 @@ Provide one of the following:
 (2) space-delimited paths to such files,
 (3) path to a JSON file with a 'files' list of such files.
 """)
-@click.argument("input_path", nargs="+")
-@click.option("--use-existing-csv", "c", default=None, help="Provide an optional existing CSV file of URLs for the script to process. The script will skip any URLs not included in the CSV.")
+@click.argument("input_path", nargs=-1)
+@click.option("--use-existing-csv", "-c", default=None, help="Provide an optional existing CSV file of URLs for the script to process. The script will skip any URLs not included in the CSV.")
 def shorten(input_path, use_existing_csv = None):
     if not input_path:
-        raise Exception('`input_path` argument is required.')
+        raise click.UsageError('`input_path` argument is required.')
 
     filepaths = resolve_input_paths(input_path)
    
     if use_existing_csv:
-        csv_filepath = Path(csv_filepath)
+        csv_filepath = Path(use_existing_csv)
         if not csv_filepath.is_file() or csv_filepath.suffix.lower() != '.csv':
             raise ValueError('If --use-existing-csv option is invoked, path to a valid CSV file must be provided.')
         url_input_list = process_csv_input(csv_filepath)
@@ -155,7 +159,7 @@ def shorten(input_path, use_existing_csv = None):
     
     if not click.prompt("Do you wish to continue? (y/n): ").strip().lower() in ['y', 'yes']:
         click.echo("Exiting.")
-        click.exit(0)
+        sys.exit(0)
     
     click.echo("\nProgress: Script is running. This may take up to several minutes to complete. Please wait...\n")
 
@@ -177,13 +181,13 @@ def shorten(input_path, use_existing_csv = None):
 
     if not click.prompt("Do you wish to continue? (y/n): ").strip().lower() in ['y', 'yes']:
         click.echo("Exiting.")
-        click.exit(0)
+        sys.exit(0)
 
     click.echo("\nContinuing. This may take up to several minutes to complete. Please wait...\n")
 
     filepaths_w_shortened_urls = shorten_urls(file_urls, all_urls, YOURLS_URL, YOURLS_KEY)
 
-    for filepath, urls in filepaths_w_shortened_urls:
+    for filepath, urls in filepaths_w_shortened_urls.items():
         update_file_content(filepath, urls)
 
     output_csv = Path.cwd() / f"output_{int(time.time())}.csv"
@@ -219,7 +223,7 @@ def delete(input_path):
 
     if not click.prompt('Do you wish to continue? (y/n) ').strip().lower() in ['y', 'yes']:
         click.echo("Exiting.")
-        click.exit(0)
+        sys.exit(0)
 
     results = delete_urls(url_input_list, YOURLS_URL, YOURLS_KEY)
 

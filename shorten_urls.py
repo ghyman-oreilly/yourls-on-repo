@@ -76,10 +76,10 @@ def extract_urls_from_file(file_path, url_input_list=None):
         content = file.read()
 
         # For HTML files, use BeautifulSoup to extract URLs from anchor tags
-        if file_path.endswith('.html'):
+        if file_path.suffix.lower() == '.html':
             soup = BeautifulSoup(content, 'html.parser')
             urls = [a['href'] for a in soup.find_all('a', href=True, class_=lambda x: x != 'co') if not (a['href'].startswith('#') or a['href'].startswith('mailto:'))]
-        else:
+        elif file_path.suffix.lower() in ['.adoc', '.asciidoc']:
             # For AsciiDoc files, convert to HTML and extract URLs from the HTML content
             html_content = convert_asciidoc_to_html(content)
             soup = BeautifulSoup(html_content, 'html.parser')
@@ -120,7 +120,7 @@ def shorten_urls(file_urls: dict, all_urls: set, yourls_url, yourls_key):
     """
     Shorten urls and return a dict of filepaths and URLs.
     """
-    yourls = YOURLSClient(yourls_url, yourls_key)
+    yourls = YOURLSClient(yourls_url, signature=yourls_key)
     
     filepaths_w_shortened_urls: dict[Path, list[tuple[str, str]]] = {}
 
@@ -131,7 +131,7 @@ def shorten_urls(file_urls: dict, all_urls: set, yourls_url, yourls_key):
         if shortened_url:
             for filepath, urls in file_urls.items():
                 if original_url in urls:
-                    filepaths_w_shortened_urls.get(filepath, []).append((original_url, shortened_url))
+                    filepaths_w_shortened_urls.setdefault(filepath, []).append((original_url, shortened_url))
         time.sleep(1) # pause to avoid overburdening API
 
     # sort tuples in descending order by original_url
