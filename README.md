@@ -13,7 +13,7 @@ A script for using the YOURLs API to shorten URLs in a collection of HTML or Asc
 1. Clone the repository or download the source files:
 
 	```bash
-	git clone git@github.com:ghyman-oreilly/generate-alt-text-for-book-repo.git
+	git clone git@github.com:ghyman-oreilly/yourls-on-repo.git
 	
 	cd yourls-on-repo
 	```
