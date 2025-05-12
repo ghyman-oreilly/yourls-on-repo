@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import tempfile
 import requests
 import time
+from typing import Optional, List
 from yourls import YOURLSClient
 
 
@@ -94,7 +95,7 @@ def extract_urls_from_file(file_path, url_input_list=None):
 
 def find_urls(
         filepaths: list[Path], 
-        url_input_list: list[str] | None = None
+        url_input_list: Optional[List[str]] = None
     ) -> tuple[dict[Path, list[str]], set[str]]:
     """
     Find URLs in a list of files.
