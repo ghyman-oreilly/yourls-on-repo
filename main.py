@@ -155,7 +155,7 @@ def shorten(input_path, use_existing_csv = None):
 
     click.echo("Warning: Please make sure to run this script on a clean Git repo.")
     click.echo("This script will replace *ALL* URLs, including those within code blocks and inline code. May not be appropriate for some repos. Use with caution and review changes carefully!")
-    click.echo(f'Files to be processed include:\n{'\n'.join([str(f) for f in filepaths])}')
+    click.echo(f"Files to be processed include:\n{'\n'.join([str(f) for f in filepaths])}")
     
     if not click.prompt("Do you wish to continue? (y/n): ").strip().lower() in ['y', 'yes']:
         click.echo("Exiting.")
