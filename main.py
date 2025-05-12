@@ -181,7 +181,7 @@ def shorten(input_path, use_existing_csv = None):
     click.echo(f"\nURLs to be shortened have been saved to {review_filepath}. Please review.")
     click.echo("Note that the script will ignore changes you make to the review file at this time. If you wish to make changes, please rerun the script with the modified review file as your --use-existing-csv input.")
 
-    if not click.prompt("Do you wish to continue? (y/n): ").strip().lower() in ['y', 'yes']:
+    if not click.prompt("Do you wish to continue? (y/n)").strip().lower() in ['y', 'yes']:
         click.echo("Exiting.")
         sys.exit(0)
 
@@ -223,7 +223,7 @@ def delete(input_path):
     for url in url_input_list:
         click.echo(url)
 
-    if not click.prompt('Do you wish to continue? (y/n) ').strip().lower() in ['y', 'yes']:
+    if not click.prompt('Do you wish to continue? (y/n)').strip().lower() in ['y', 'yes']:
         click.echo("Exiting.")
         sys.exit(0)
 
