@@ -1,4 +1,5 @@
 import requests
+import time
 
 
 def check_urls(urls: set):
@@ -24,5 +25,7 @@ def check_urls(urls: set):
         elif response != requests.codes.ok:
             # response is among codes categorized as error codes (not in built-in requests.codes.ok)
             bad_urls.append(str(response) + " error: " + url)
+
+        time.sleep(1)
 
     return bad_urls
