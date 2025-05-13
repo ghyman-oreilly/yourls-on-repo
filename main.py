@@ -8,8 +8,10 @@ import sys
 import time
 
 from helpers import get_and_validate_env
+from check_urls import check_urls
 from delete_urls import delete_urls
-from shorten_urls import find_urls, shorten_urls, update_file_content
+from get_urls import find_urls
+from shorten_urls import shorten_urls, update_file_content
 
 
 load_dotenv()
@@ -230,6 +232,44 @@ def delete(input_path):
     results = delete_urls(url_input_list, YOURLS_URL, YOURLS_KEY)
 
     click.echo('Script complete.')
+
+
+@cli.command(help="""
+Provide one of the following:
+(1) path to a directory containing HTML or Asciidoc files,
+(2) space-delimited paths to such files,
+(3) path to a JSON file with a 'files' list of such files.
+""")
+@click.argument("input_path", nargs=-1)
+def check(input_path):
+    if not input_path:
+        raise click.UsageError('`input_path` argument is required.')
+
+    filepaths = resolve_input_paths(input_path)
+      
+    filelist = '\n'.join([str(f) for f in filepaths])
+    click.echo(f"Files to be processed include:\n{filelist}")
+    
+    if not click.prompt("Do you wish to continue? (y/n)").strip().lower() in ['y', 'yes']:
+        click.echo("Exiting.")
+        sys.exit(0)
+    
+    click.echo("\nProgress: Script is running. This may take up to several minutes to complete. Please wait...\n")
+    
+    _, all_urls = find_urls(filepaths)
+
+    bad_urls = check_urls(all_urls)
+
+    output_path = Path.cwd() / f"output_{int(time.time())}.txt"
+
+    if bad_urls:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.writelines(bad_url + '\n' for bad_url in bad_urls)
+
+        click.echo(f"\nScript completed. Results saved to {output_path}")
+    else:
+        click.echo(f"\nScript completed. No bad URLs found.")
+
 
 if __name__ == '__main__':
     cli()
