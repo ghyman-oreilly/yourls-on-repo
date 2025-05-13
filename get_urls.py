@@ -1,12 +1,16 @@
 from bs4 import BeautifulSoup
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 from typing import Optional, List
 
 
 def convert_asciidoc_to_html(asciidoc_content):
+    if shutil.which('asciidoctor') is None:
+        raise RuntimeError("The 'asciidoctor' command is not available on this system. Please install it.")
+    
     with tempfile.NamedTemporaryFile(mode='w+', suffix='.asciidoc', delete=False) as temp_input:
         temp_input.write(asciidoc_content)
         temp_input_path = temp_input.name
@@ -23,6 +27,7 @@ def convert_asciidoc_to_html(asciidoc_content):
         os.remove(temp_input_path)
 
     return html_content
+
 
 def extract_urls_from_file(file_path, url_input_list=None):
     with open(file_path, 'r', encoding='utf-8') as file:
