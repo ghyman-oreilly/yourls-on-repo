@@ -24,7 +24,7 @@ def shorten_url(original_url, yourls: YOURLSClient):
         # hacky error handling, but I find no better options for checking YOURLS server availability
         # (no built-in methods; server forbids GET and HEAD requests)
         if "Expecting value: line 1 column 1" in str(exc):
-            logger.error("Unable to reach YOURLS server. Please check your VPN connection. Exiting.")
+            logger.error(f"RequestException: {exc}.\nPlease check your VPN connection. Exiting.")
             sys.exit(1)
     except yourls.exceptions.YourlsError as exc:
         error_message = f"YOURLS Error: {exc}"
