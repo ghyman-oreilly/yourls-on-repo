@@ -128,6 +128,7 @@ def process_csv_input(csv_filepath: Path) -> list[str]:
 
 
 @click.group()
+@click.version_option(version='1.1.2')
 def cli():
     """Utility for working with YOURLs in a project repo."""
     setup_logging()

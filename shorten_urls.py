@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 import requests
+import sys
 import time
 from yourls import YOURLSClient
 
@@ -19,6 +20,12 @@ def shorten_url(original_url, yourls: YOURLSClient):
         error_message = f"HTTPError: {exc}"
     except requests.exceptions.RequestException as exc:
         error_message = f"RequestException: {exc}"
+        # requests can't parse JSON because service is unavailable
+        # hacky error handling, but I find no better options for checking YOURLS server availability
+        # (no built-in methods; server forbids GET and HEAD requests)
+        if "Expecting value: line 1 column 1" in str(exc):
+            logger.error("Unable to reach YOURLS server. Please check your VPN connection. Exiting.")
+            sys.exit(1)
     except yourls.exceptions.YourlsError as exc:
         error_message = f"YOURLS Error: {exc}"
     except yourls.exceptions.YourlsClientError as exc:
